@@ -1,12 +1,16 @@
-language: cpp
-sudo: false
-
-compiler:
-- clang
-- gcc
+language: python
+python:
+- 3.7-dev
+os: linux
+dist: xenial
+sudo: true
+env:
+  global:
+  - COMMIT=${TRAVIS_COMMIT::6}
+  - BUILD_TYPE="stellar-core"
 
 addons:
-  postgresql: "9.3"
+  postgresql: "9.5"
   apt:
     sources:
     - llvm-toolchain-trusty-3.5
@@ -23,11 +27,19 @@ addons:
     - libpq5
     - libstdc++6
     - libtool
-    - pkg-config
-    - clang-format-5.0
     - pandoc
+    - libffi-dev
 
-script: ./travis-build.sh
+before_script:
+- git describe --tags >> describe.txt
+- export MY_TAG="$(cat describe.txt)"
+
+script:
+- mkdir $COMMIT && cd $COMMIT
+- git clone https://github.com/kinecosystem/blockchain-ops.git && cd blockchain-ops
+- pip -V
+- pipenv sync
+- pipenv run invoke build-core --branch=$TRAVIS_BRANCH --version=$MY_TAG 
 
 cache:
   directories:
@@ -39,7 +51,6 @@ notifications:
   slack:
     secure: VYA87p8f6PgmOhL8b8DM4t6k8vPYjULpT7LBhvmNBNe8iiNDtTzLpRbUXg6t6Ij7Y3MU4uOJ5K617hCqs81VfRoOakbiYTWHeYSsMmIrUM4+d5MZM4pVP0/bCE49qt06bZINorh6IHChhfuvod3uyUqbgNrwRf/qDIIboFDIty8=
 
-branches:
- only:
- - auto
+# Only build tags
+if: tag IS present
 
